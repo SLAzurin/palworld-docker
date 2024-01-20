@@ -23,10 +23,10 @@ ENV SKIPUPDATE="false" \
     STEAMUSER="anonymous" \
     STEAMPASSWORD="" \
     STEAM2FA="" \
-    GAMEPORT="8221" \
+    GAMEPORT="8211" \
     GAMEPLAYERS="16" \
     MULTITHREAD="true"
 
-EXPOSE 8221/udp
+EXPOSE 8211/udp
 
 ENTRYPOINT [ "/init.sh" ]

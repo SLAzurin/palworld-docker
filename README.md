@@ -11,7 +11,7 @@ A simple docker container to download and run the Dedicated Palworld Server
 | STEAMUSER     | anonymous     | Defines a login user for `steamcmd`                                                                                             |
 | STEAMPASSWORD | <blank>       | Defines a login password for `steamcmd`                                                                                         |
 | STEAM2FA      | <blank>       | Defines a login 2fa for `steamcmd`                                                                                              |
-| GAMEPORT      | 8221          | Sets the port that the game runs inside the container                                                                           |
+| GAMEPORT      | 8211          | Sets the port that the game runs inside the container                                                                           |
 | GAMEPLAYERS   | 16            | Sets the maximum number of players that the server will allow                                                                   |
 | MULTITHREAD   | true          | Enabled the [recommended](https://tech.palworldgame.com/dedicated-server-guide#settings) server options for multi-threaded CPUs |
 
