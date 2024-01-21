@@ -1,11 +1,16 @@
 #!/bin/bash
-
+# Only use with ghcr.io/slazurin/palworld:alpha
 set -e
 
-CURRENTUID=$(id -u)
+# Force set IDs
+PGID=1000
+PUID=1000
+ROOTLESS=true
+
+CURRENTUID=1000
 HOME="/home/steam"
-MSGERROR="\033[0;31mERROR:\033[0m"
-MSGWARNING="\033[0;33mWARNING:\033[0m"
+MSGERROR="@@@ !!! ERROR !!! @@@ "
+MSGWARNING="@@@ !!! WARNING !!! @@@ "
 NUMCHECK='^[0-9]+$'
 RAMAVAILABLE=$(awk '/MemAvailable/ {printf( "%d\n", $2 / 1024000 )}' /proc/meminfo)
 USER="steam"
@@ -37,39 +42,69 @@ if [[ "$CURRENTUID" -ne "0" ]] && [[ "${ROOTLESS,,}" != "true" ]]; then
     exit 1
 fi
 
-if ! [[ "$PGID" =~ $NUMCHECK ]] ; then
-    printf "${MSGWARNING} Invalid group id given: %s\\n" "$PGID"
+if ! [[ "$PGID" =~ $NUMCHECK ]]; then
+    printf "%s Invalid group id given: %s\\n" "$MSGWARNING" "$PGID"
     PGID="1000"
 elif [[ "$PGID" -eq 0 ]]; then
-    printf "${MSGERROR} PGID/group cannot be 0 (root)\\n"
+    printf "%s PGID/group cannot be 0 (root)\\n" "$MSGERROR"
     exit 1
 fi
 
-if ! [[ "$PUID" =~ $NUMCHECK ]] ; then
-    printf "${MSGWARNING} Invalid user id given: %s\\n" "$PUID"
+if ! [[ "$PUID" =~ $NUMCHECK ]]; then
+    printf "%s Invalid user id given: %s\\n" "$PUID" "$MSGWARNING"
     PUID="1000"
 elif [[ "$PUID" -eq 0 ]]; then
-    printf "${MSGERROR} PUID/user cannot be 0 (root)\\n"
+    printf "%s PUID/user cannot be 0 (root)\\n" "$MSGERROR"
     exit 1
 fi
 
 if [[ "${ROOTLESS,,}" != "true" ]]; then
-  if [[ $(getent group $PGID | cut -d: -f1) ]]; then
-      usermod -a -G "$PGID" steam
-  else
-      groupmod -g "$PGID" steam
-  fi
+    if [[ $(getent group "$PGID" | cut -d: -f1) ]]; then
+        usermod -a -G "$PGID" steam
+    else
+        groupmod -g "$PGID" steam
+    fi
 
-  if [[ $(getent passwd ${PUID} | cut -d: -f1) ]]; then
-      USER=$(getent passwd $PUID | cut -d: -f1)
-  else
-      usermod -u "$PUID" steam
-  fi
+    if [[ $(getent passwd "$PUID" | cut -d: -f1) ]]; then
+        USER=$(getent passwd "$PUID" | cut -d: -f1)
+    else
+        usermod -u "$PUID" steam
+    fi
 fi
+
+printf "\nStarting Server...\n"
 
 if [[ "${ROOTLESS,,}" != "true" ]]; then
-  chown -R "$PUID":"$PGID" /game /home/steam /tmp/dumps
-  exec gosu "$USER" "/home/steam/run.sh" "$@"
-else
-  exec "/home/steam/run.sh" "$@"
+    echo Please set "ROOTLESS=true" "PGID=1000" "PUID=1000" env vars
+    echo this will not work otherwise
+    exit 1
 fi
+
+if [[ "${SKIPUPDATE,,}" != "false" ]] && [ ! -f "/home/steam/PalDocker/game/PalServer.sh" ]; then
+    printf "%s Skip update is set, but no game files exist. Updating anyway\\n" "${MSGWARNING}"
+    SKIPUPDATE="false"
+fi
+
+if [[ "${SKIPUPDATE,,}" != "true" ]]; then
+    STORAGEAVAILABLE=$(stat -f -c "%a*%S" .)
+    STORAGEAVAILABLE=$((STORAGEAVAILABLE / 1024 / 1024 / 1024))
+    printf "Checking available storage...%sGB detected\\n" "$STORAGEAVAILABLE"
+
+    if [[ "$STORAGEAVAILABLE" -lt 8 ]]; then
+        printf "You have less than 8GB (%sGB detected) of available storage to download the game.\\nIf this is a fresh install, it will probably fail.\\n" "$STORAGEAVAILABLE"
+    fi
+
+    printf "Downloading the latest version of the game...\\n"
+    /home/steam/steamcmd/steamcmd.sh +force_install_dir /home/steam/PalDocker/game +login "$STEAMUSER" "$STEAMPASSWORD" "$STEAM2FA" +app_update "$STEAMAPPID" validate +quit
+else
+    printf "Skipping update as flag is set\\n"
+fi
+
+if [ ! -L /home/steam/PalDocker/game/linux64 ]; then
+    ln -s /home/steam/PalDocker/game/linux64 /home/steam/.steam/sdk64
+fi
+
+
+cd "/home/steam/PalDocker/game" || exit 1
+chmod +x ./Pal/Binaries/Linux/PalServer-Linux-Test
+./Pal/Binaries/Linux/PalServer-Linux-Test Pal -port 8211 -players "$GAMEPLAYERS" -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS "$@"

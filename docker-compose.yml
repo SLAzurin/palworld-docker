@@ -1,0 +1,18 @@
+version: '2.4'
+
+# Use this compose file as a reference point about what configs are required
+# It should only be used to test docker params
+
+
+# WARNING! The game folder should be owned by uid:gid 1000:1000 before starting the docker container
+
+services:
+  palworld:
+    image: ghcr.io/slazurin/palworld:latest
+    environment:
+      - GAMEPLAYERS=32
+    restart: unless-stopped
+    ports:
+     - 8211:8211/udp
+    volumes:
+      - ./game:/home/steam/PalDocker/game

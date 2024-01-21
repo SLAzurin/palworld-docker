@@ -1,32 +1,24 @@
-FROM steamcmd/steamcmd:debian-12
+FROM cm2network/steamcmd:latest
+USER steam
 
-RUN set -x \
- && apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y gosu xdg-user-dirs --no-install-recommends\
- && rm -rf /var/lib/apt/lists/* \
- && useradd -ms /bin/bash steam \
- && gosu nobody true
+RUN mkdir -p /home/steam/PalDocker/config \
+ && chown steam:steam /home/steam/PalDocker/config
 
-RUN mkdir -p /config \
- && chown steam:steam /config
+RUN mkdir -p /home/steam/PalDocker/game \
+ && chown steam:steam /home/steam/PalDocker/game
 
-RUN mkdir -p /game \
- && chown steam:steam /game
+COPY --chown=steam:steam ./init.sh /home/steam/PalDocker/
 
-COPY init.sh /
-COPY --chown=steam:steam run.sh /home/steam
-
-WORKDIR /config
+WORKDIR /home/steam/PalDocker
 
 ENV SKIPUPDATE="false" \
     STEAMAPPID="2394010" \
     STEAMUSER="anonymous" \
     STEAMPASSWORD="" \
     STEAM2FA="" \
-    GAMEPORT="8211" \
-    GAMEPLAYERS="16" \
-    MULTITHREAD="true"
+    GAMEPLAYERS="16"
 
 EXPOSE 8211/udp
 
-ENTRYPOINT [ "/init.sh" ]
+ENTRYPOINT [ "bash" ]
+CMD [ "-c", "/home/steam/PalDocker/init.sh" ]
