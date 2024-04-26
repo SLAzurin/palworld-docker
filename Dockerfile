@@ -2,7 +2,7 @@ FROM steamcmd/steamcmd:debian-12
 
 RUN set -x \
  && apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y gosu xdg-user-dirs --no-install-recommends\
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y gosu xdg-user-dirs curl --no-install-recommends\
  && rm -rf /var/lib/apt/lists/* \
  && useradd -ms /bin/bash steam \
  && gosu nobody true

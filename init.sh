@@ -1,6 +1,15 @@
 #!/bin/bash
 
 set -e
+discord() {
+    if [[ $DISCORD_WEBHOOK == '' ]]; then
+        return
+    fi
+    curl --location "$DISCORD_WEBHOOK" --header 'Content-Type: application/json' --data "{\"content\":\"$1\"}" >/dev/null 2>&1 || true
+}
+export -f discord
+
+discord "Starting server, checking system requirements..."
 
 CURRENTUID=$(id -u)
 HOME="/home/steam"

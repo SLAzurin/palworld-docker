@@ -2,6 +2,8 @@
 
 set -e
 
+discord "Checking for PalWorld server updates..."
+
 if [[ "${SKIPUPDATE,,}" != "false" ]] && [ ! -f "/game/PalServer.sh" ]; then
     printf "%s Skip update is set, but no game files exist. Updating anyway\\n" "${MSGWARNING}"
     SKIPUPDATE="false"
@@ -31,5 +33,7 @@ if [ ! -L /home/steam/.steam/sdk64 ] ; then
 fi
 
 cd /game || exit 1
+
+discord "Starting server. No more status updates will be sent from this point on."
 
 exec ./PalServer.sh -port $GAMEPORT -players $GAMEPLAYERS $GAMEOPTIONS "$@"
